@@ -24,7 +24,22 @@ body {
   align-content: space-between;
 }
 
+.post {
+  background-color: #267e99;
+  color: #252A44; 
+  padding-left: 3rem;
+  padding-right: 3rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
 a:link, a:visited {
   text-decoration: none;
   color: #267e99;
+}
+
+h1, h2, h3, h4, h5, h6, p, pre code {
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: .5em;
 }
