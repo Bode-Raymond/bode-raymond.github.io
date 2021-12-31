@@ -42,8 +42,26 @@
         
       </div>
       <h2 id="Crypto" style="margin-bottom:0px;">Cryptography</h2>
-      <div class="post">
-
+      <div class="post" style="font-weight:bold;">
+        <center>
+          <h3>Thnks fr th Pwds</h3>
+        </center>
+        <blockquote>
+          <p><em>Hashing is a system by which information is encrypted such that it can never be decrypted... theoretically. Websites will often hash passwords so that if their passwords are ever leaked, bad actors won't actually learn the user's password; they'll just get an encrypted form of it. However, the same password will always hash to the same ciphertext, so if the attacker can guess your password, they can figure out the hash. Can you guess the password for this hash?</em></p>
+          <code><em>cb78e77e659c1648416cf5ac43fca4b65eeaefe1</em></code>
+        </blockquote>
+        <p>This challenge is a simple password cracking challenge. There are two methods to solve this challenge</p>
+        <h3>Method 1</h3>
+        <p>The first method is to use a password cracking software such as hashcat</p>
+        <p>We can Identify that the type of hash is SHA1 using an online tool.</p>
+        <p>The wordlist we want to use to crack this hash is rockyou.txt. This is a good go to to look for weak and common passwords.</p>
+        <code>hashcat -m 100 -a 0 rockyou.txt hash.txt</code>
+        <h3>Method 2</h3>
+        <p>The second method is to use an online tool like crackstation. Crackstation is my usual go to in a CTF for easy password cracking as the database is most likely to contain the passowrd.</p>
+        <details style="margin-top:8px;">
+          <summary>Reveal Flag</summary>
+          <p style="margin-top:8px;">babyloka13</p>
+        </details>
       </div>
       <h2 id="Forensics" style="margin-bottom:0px;">Forensics</h2>
       <div class="post">
@@ -84,7 +102,33 @@
           <p style="margin-top:8px;">MetaCTF{addr3s5_r3s0lut1on_pwn4g3}</p>
         </details>
       </div>
+      <br>
+      <div class="post" style="font-weight:bold;">
+        <center>
+          <h3>Interception 2</h3>
+        </center>
+        <blockquote>
+          <p><em>Someone on this network is periodically sending the flag to ... someone else on this network, over TCP port 8000. Go get it.</em></p>
+          <code><em>ssh ctf-46ed3559da08@host.cg21.metaproblems.com -p 7000</em></code>
+        </blockquote>
+        <p>This challenge is similar to the last except we aren't provided any IP addresses.</p>
+        <p>The first thing I did was do a ping sweep on the subnet 192.168.0.1/24.</p>
+        <code>nmap -sn 192.168.0.1/24</code>
+        <p>I was expecting to get back two IPs but instead I was greeted with 90 IPs ranging from 192.168.0.1 to 192.168.0.90.</p>
+        <p>My next thought was to try finding which device had port 8000 open otherwise it wouldn't be able to reviece the data. Doing a port scan for TCP port 8000 on the 90 IPs showed one IP with port 8000 open.</p>
+        <code>nmap -p 8000 192.168.0.1-90</code>
+        <p>The reciving address was revealed to be 192.168.0.78. Now we know the recieving IP, but we don't know the sending IP. Thankfully the IP of the sender doesn't matter because we can poison all 90 IPs at one by using the broadcase address 192.168.0.255.</p>
+        <p>We can now use this information to do the same thing as Interception 1</p>
+        <code>/sbin/ifconfic eth0:10 192.168.0.78 up</code><br>
+        <code>arping -c 1 -U -s 192.168.0.78 192.168.0.255</code><br>
+        <code>nc -l 8000</code><br>
+        <details style="margin-top:8px;">
+          <summary>Reveal Flag</summary>
+          <p style="margin-top:8px;">MetaCTF{s0_m4ny_1ps_but_wh1ch_t0_ch00s3}</p>
+        </details>
+      </div>
     </div>
+    <br><br><br><br><br>
 
   </body>
 </html>
