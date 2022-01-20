@@ -40,29 +40,27 @@
           To start out with I did a simple TCP nmap scan using <br><code>nmap -sC -sV 10.10.11.136</code><br>
           to see what ports were open. When the scan completed I only saw ports 22 (SSH) and 80 (HTTP) open.
         </p>
-        <src>Image here</src>
+        <img src="/img/tcpscan.png" height="85%" width="85%">
         <p>
           I first looked into the contents of the website. After some poking around and testing for XSS in a 
           messaging form I decided to look elsewhere.
         </p>
-        <src>Image here</src>
         <p>
           It took me some time to realized but I then remembered I could do a UDP scan with nmap
           <br><code>sudo nmap -sU -sC -sV 10.10.11.136</code><br>
           This run showed port 161 open on UDP. After some research on the port number I found that it 
           was an SNMP server.
         </p>
-        <src>Image here</src>
+        <img src="/img/udpscan.png" height="85%" width="85%">
         <p>
           I figured that this stood out and that it was worth looking into. I found a tool online that would 
           allow me to get more information on the port. Now using <br><code>snmpwalk -c public 10.10.11.136 -v1 > snmpwalk.out</code><br>
           I was able to get information more information on the service.
         </p>
-        <src>Image here</src>
         <p>
           While parsing the output I found some pain text credentials for a non-privledged user on the system.
         </p>
-        <src>Image here</src>
+        <img src="/img/snmpout.png" height="85%" width="85%">
         <p>
           For more context, snmpwalk will run multiple GETNEXT requests automatically. The SNMP GETNEXT request is used 
           to query an enabled device and take SNMP data from a device. This can return a large amount of information including 
@@ -72,18 +70,89 @@
           Now that we have a valid set of credentials we can get our foothold by logging in over ssh.
           <br><code>ssh [redacted]@10.10.11.136</code><br>
         </p>
-        <src>Image here</src>
+        <img src="/img/foothold.png" height="85%" width="85%">
       </div>
       <h2 id="User" style="margin-bottom:0px;">User</h2>
       <div class="post" style="font-weight:bold;">
         <p>
-          
+          The first thing I tried to do upon login in was get the source flag, but I did not have access
+          with the user I was currently logged in with. So the next step was to view running processes to see if
+          there was any vulnerable processes or exposed credentials. Using the command 
+          <br><code>ps aux | less</code><br>
+          I was able to view all running process and look through them. while scrolling I saw a process that stood 
+          and showed the credentials of the user I already had access to but also a command that was run by that user.
+        </p>
+        <img src="/img/processes.png  " height="95%" width="95%">
+        <p>
+          I decided to look into the binary being executed. At first I tried to use strings but the machine didnt have
+          that command installed. I then just used cat to open the file and read the contents. Upon looking into the 
+          binary I was met with a url which pointed to an api query for pandora_console.
+        </p>
+        <img src="/img/hostcheckbinary.png" height="100%" width="100%">
+        <p>
+          To figure out more about this service I went to the <code>/var/www/</code> directory and found both the running 
+          webserver and a service called Pandora FMS. I started poking around the directory and saw a page called 
+          pandora_console. I tried to access this from outside my machine but found it was inaccessible outside of the 
+          machine.
+        </p>
+        <p>
+          The next step was to figure out how I could access Pandora FMS from my machine so I could do proper scans on 
+          the service. After some time I came across two options: SSH port forwarding or Chisel tunneling software.
+          For simplicity I chose to use SSH port forwarding to make the service available on my local machine. 
+          Using the command 
+          <br><code>sudo ssh -L 80:127.0.0.1:80 [REDACTED]@10.10.11.136</code><br>
+          I can forward the service running on the remote machines localhost to my port 80 and access pandora. 
+        </p>
+        <img src="/img/portforward.png" height="100%" width="100%">
+        <p>
+          Now that the port forwarding is working we can check if it is available by navigating to:
+          <br><code>http://127.0.0.1/pandora_console</code><br>
+        </p>
+        <img src="/img/pandoraconsole.png" height="100%" width="100%">
+        <p>
+          The next step is to start analyzing the application. after several hours of digging and trying different 
+          exploits I still had no progress. After some time I did come across a CVE that pointed me to a sqli 
+          vulnerability in Pandora FMS. After some more digging I was able to find a working payload on github 
+          that allowed my to get auth bypass and login as admin on Pandora FMS.
+        </p>
+        <img src="/img/authbypass.png" height="100%" width="100%">
+        <p>
+          The next step is now to figure out how to get a reverse shell on the system. Looking into some of the 
+          features in Pandora I found an upload form that I could inject a shell into. I first tried to upload 
+          Pentest Monkey's php reverse shell by itself but the application did not take that extension. The only 
+          extension that I found was zip. So I send the reverse shell to zip and uploaded it.
+        </p>
+        <img src="/img/shellupload.png" height="100%" width="100%">
+        <p>
+          Next I set up the reverse listener with netcat and reloaded the page to start the connection.
+        </p>
+        <img src="/img/reverseshell.jpg" height="100%" width="100%">
+        <p>
+          We now have user access and can read the user flag.
         </p>
       </div>
       <h2 id="Root" style="margin-bottom:0px;">Root</h2>
       <div class="post" style="font-weight:bold;">
         <p>
-
+          The first step before we can work on getting root is to add our public ssh key to the authorized users
+          file which will allow us to get a stable shell thorugh ssh. Once we are logged in with SSH we can begin 
+          looking for privledge escalation.
+        </p>
+        <p>
+          The first thing I did was check sudo -l which did not work because I did not have the password for matt. 
+          The next thing I tried was to search for SGID and SUID binarys which also returned nothing. Finally, 
+          I decided to look through the path for files owned by the user. After some digging I found a binary in 
+          <code>/usr/bin/</code> named <code>pandora_backup</code>. Reading this file with cat shows a command 
+          being run that will tar all of pandora and send it to a backup.
+        </p>
+        <img src="/img/backupbinary.png" height="100%" width="100%">
+        <p>
+          The catch with this command was that it was calling tar using the relative path with means we can 
+          manipulate the path to change the behavior of the command. So I navigated to tmp and setup the exploit.
+        </p>
+        <img src="/img/gotroot.png" height="100%" width="100%">
+        <p>
+          We now have the root flag and have finished the box.
         </p>
       </div>
     </div>
